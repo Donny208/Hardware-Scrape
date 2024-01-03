@@ -1,0 +1,16 @@
+[package]
+name = "HardwareScrape"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+dotenv = "0.15.0"
+env_logger = "0.10.1"
+log = "0.4.20"
+reqwest = { version = "0.11.23", features = ["json"] }
+serde = { version = "1.0.194", features = ["derive"] }
+tokio = { version = "1.0.0", features = ["rt", "rt-multi-thread", "macros"] }
+serde_yaml = "0.9.30"
+roux = "2.2.9"

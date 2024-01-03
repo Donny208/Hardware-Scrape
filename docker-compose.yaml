@@ -1,0 +1,21 @@
+version: "3"
+services:
+  worker:
+    build: .
+    env_file:
+      - .env
+#  mongo:
+#    image: mongo
+#    restart: always
+#    environment:
+#      MONGO_INITDB_ROOT_USERNAME: donny
+#      MONGO_INITDB_ROOT_PASSWORD: october15
+#  mongo-express:
+#    image: mongo-express
+#    restart: always
+#    ports:
+#      - 8081:8081
+#    environment:
+#      ME_CONFIG_MONGODB_ADMINUSERNAME: donny
+#      ME_CONFIG_MONGODB_ADMINPASSWORD: testpassword
+#      ME_CONFIG_MONGODB_URL: mongodb://donny:testpassword@mongo:27017/

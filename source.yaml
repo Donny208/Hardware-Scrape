@@ -1,0 +1,18 @@
+# Still needs to be integrated
+sources:
+  - id: "hardwareswap"
+    enabled: True
+    url: "https://www.reddit.com/r/hardwareswap/"
+    accepted_flair:
+     - "SELLING"
+    have_regex: \[USA-\w{2}\]\[H\](.*)
+    want_regex: \[W\](.*)
+  - id: "homelabsales"
+    enabled: False
+    url: "https://www.reddit.com/r/homelabsales/"
+    accepted_flair:
+      - "US-W"
+      - "US-C"
+      - "US-E"
+    have_regex: \[FS\]\[USA-\w{2}\]
+    want_regex: ""

@@ -1,0 +1,77 @@
+use std::time::{SystemTime, UNIX_EPOCH};
+use log::info;
+use roux::response::BasicThing;
+use roux::submission::SubmissionData;
+use roux::Subreddit;
+use crate::services::yaml_support::source_file::SingleSource as SingleSource;
+use crate::services::telegram::Telegram;
+const BUFFER_SECONDS: f64 = 2.5;
+const MINUTE_OFFSET: u64 = 60 * 1;
+
+//todo revist this when you have learned about lifetimes and maybe swap String for &'str
+pub struct Reddit {
+    sources: Vec<SingleSource>,
+    filters: Vec<String>,
+}
+
+impl Reddit {
+    pub fn new(filters: Vec<String>, sources: Vec<SingleSource>) -> Reddit {
+        Reddit {
+            sources,
+            filters,
+        }
+    }
+
+    pub async fn check_posts(&self) {
+        let time_check = match SystemTime::now().duration_since(UNIX_EPOCH) {
+            Ok(n) => (n.as_secs()-(MINUTE_OFFSET)) as f64, //set to 1 minute before
+            Err(_) => panic!("SystemTime before UNIX EPOCH!"),
+        };
+
+        let subreddit = Subreddit::new("hardwareswap");
+        let latest = subreddit.latest(10, None).await; //adjust the 10 as seen
+        match latest {
+            Ok(submissions) => {
+                // First we filter out any submissions that are older than now minus 1 minute
+                let valid_submissions: Vec<_> = submissions.data.children.into_iter().filter(|s| submission_check(s, time_check)).collect();
+
+                //Iterate over all valid submissions and look for values from self.filters
+                for s in valid_submissions{
+                    self.filter_check(&s).await;
+                }
+            }
+            Err(err) => {
+                println!("Failed to get submissions{}", err);
+            }
+        }
+    }
+
+    async fn filter_check(&self, submission: &BasicThing<SubmissionData>) {
+        let mut title = &submission.data.title.to_ascii_lowercase();
+        let mut text = &submission.data.selftext.to_ascii_lowercase();
+        let url =  submission.data.url.as_ref().unwrap();
+
+        //Iterate over all fiters and look for match
+        for filter in &self.filters{
+            //Look for title match
+            if (title.contains(filter) || text.contains(filter)){
+                info!("Filter match found, sending message now.");
+                let msg = format!("__Filter Match: {filter}__\n[Deal here]({})", url);
+                Telegram::send(msg).await;
+                return
+            }
+        }
+    }
+}
+
+fn submission_check(submission: &BasicThing<SubmissionData>, time: f64) -> bool {
+    let time_check = submission.data.created_utc > time-BUFFER_SECONDS;
+    let flair_check = {
+        if let Some(flair) = &submission.data.link_flair_text {
+            flair.eq("SELLING") //todo have this check the filterFile, hardcoded right now to hardwareswap
+        } else {
+            false
+        }
+    };
+    return time_check && flair_check
+}
