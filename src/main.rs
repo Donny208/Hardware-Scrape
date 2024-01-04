@@ -13,7 +13,7 @@ async fn main() {
     let (filter_file, source_file) = load_configs(false);
     let reddit = Reddit::new(filter_file.keywords, source_file.sources);
 
-    reddit.check_posts().await;
+    reddit.await.check_posts().await;
 }
 
 //Basic inits for env

@@ -3,3 +3,5 @@ docker-compose.yaml
 Dockerfile
 .dockerignore
 .gitignore
+.idea
+linode.txt
