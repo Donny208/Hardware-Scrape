@@ -32,7 +32,7 @@ impl Reddit {
         };
         let client = get_client().await;
         let subreddit = Subreddit::new_oauth("hardwareswap", &client); //todo make this not hardcoded and use sources.yaml
-        let latest = subreddit.latest(10, None).await; //adjust the 10 as seen
+        let latest = subreddit.latest(15, None).await; //adjust the 10 as seen
         match latest {
             Ok(submissions) => {
                 // First we filter out any submissions that are older than now minus 1 minute
