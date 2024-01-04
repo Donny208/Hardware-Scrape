@@ -18,7 +18,6 @@ async fn main() {
 
 //Basic inits for env
 fn start_load() {
-    info!("Starting up HardwareScrape");
     dotenv().ok();
     env_logger::init();
 }

@@ -8,7 +8,7 @@ use roux::Subreddit;
 use crate::services::yaml_support::source_file::SingleSource as SingleSource;
 use crate::services::telegram::Telegram;
 const BUFFER_SECONDS: f64 = 2.5;
-const MINUTE_OFFSET: u64 = 60 * 1;
+const MINUTE_OFFSET: u64 = 60 * 3;
 
 //todo revist this when you have learned about lifetimes and maybe swap String for &'str
 pub struct Reddit {
@@ -25,6 +25,7 @@ impl Reddit {
     }
 
     pub async fn check_posts(&self) {
+        info!("Checking posts within the last {} minute(s)", MINUTE_OFFSET/60);
         let time_check = match SystemTime::now().duration_since(UNIX_EPOCH) {
             Ok(n) => (n.as_secs()-(MINUTE_OFFSET)) as f64, //set to 1 minute before
             Err(_) => panic!("SystemTime before UNIX EPOCH!"),
