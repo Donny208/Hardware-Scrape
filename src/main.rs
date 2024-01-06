@@ -31,7 +31,7 @@ fn load_configs(verbose: bool) -> (FilterFile, SourceFile){
     let source_contents = fs::read_to_string("./source.yaml").expect("Should have been able to read the file");
     let source_file: SourceFile = serde_yaml::from_str(&source_contents).unwrap();
 
-    if (verbose){
+    if verbose{
         println!("{:#?}", filter_file);
         println!("Sources Found: ");
         for source in &source_file.sources {

@@ -1,15 +1,19 @@
 version: "3"
 services:
   worker:
+    container_name: hs
     build: .
     env_file:
       - .env
+    volumes:
+      - ./filter.yaml:/app/filter.yaml
+      - ./source.yaml:/app/source.yaml
 #  mongo:
 #    image: mongo
 #    restart: always
 #    environment:
 #      MONGO_INITDB_ROOT_USERNAME: donny
-#      MONGO_INITDB_ROOT_PASSWORD: october15
+#      MONGO_INITDB_ROOT_PASSWORD: testpassword15
 #  mongo-express:
 #    image: mongo-express
 #    restart: always

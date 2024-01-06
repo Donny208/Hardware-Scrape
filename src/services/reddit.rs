@@ -25,41 +25,58 @@ impl Reddit {
     }
 
     pub async fn check_posts(&self) {
+        ///
+        /// Iterate over all subreddits in source.yaml and get the most recent n posts and check for filter matches
+        /// on valid submissions.
+        ///
         info!("Checking posts within the last {} minute(s)", MINUTE_OFFSET/60);
         let time_check = match SystemTime::now().duration_since(UNIX_EPOCH) {
             Ok(n) => (n.as_secs()-(MINUTE_OFFSET)) as f64, //set to 1 minute before
             Err(_) => panic!("SystemTime before UNIX EPOCH!"),
         };
         let client = get_client().await;
-        let subreddit = Subreddit::new_oauth("hardwareswap", &client); //todo make this not hardcoded and use sources.yaml
-        let latest = subreddit.latest(15, None).await; //adjust the 10 as seen
-        match latest {
-            Ok(submissions) => {
-                // First we filter out any submissions that are older than now minus 1 minute
-                let valid_submissions: Vec<_> = submissions.data.children.into_iter().filter(|s| submission_check(s, time_check)).collect();
+        for source in &self.sources {
+            if source.enabled {
+                info!("-> Checking {}", source.id);
+                let subreddit = Subreddit::new_oauth(source.id.as_ref(), &client); //todo make this not hardcoded and use sources.yaml
+                let latest = subreddit.latest(15, None).await; //adjust the 10 as seen
+                match latest {
+                    Ok(submissions) => {
+                        // First we filter out any submissions that are older than now minus 1 minute
+                        let valid_submissions: Vec<_> = submissions.data.children.into_iter()
+                            .filter(|s| submission_check(s, time_check, &source))
+                            .collect();
 
-                //Iterate over all valid submissions and look for values from self.filters
-                for s in valid_submissions{
-                    self.filter_check(&s).await;
+                        //Iterate over all valid submissions and look for values from self.filters
+                        for s in valid_submissions{
+                            self.filter_check(&s).await;
+                        }
+                    }
+                    Err(err) => {
+                        println!("Failed to get submissions{}", err);
+                    }
                 }
-            }
-            Err(err) => {
-                println!("Failed to get submissions{}", err);
             }
         }
     }
 
     async fn filter_check(&self, submission: &BasicThing<SubmissionData>) {
-        let mut title = &submission.data.title.to_ascii_lowercase();
-        let mut text = &submission.data.selftext.to_ascii_lowercase();
+        ///
+        /// Compares values in filter.yaml to a submission's title and selftext.
+        /// If a match is found then it will send out a Telegram notification
+        ///
+        let title = &submission.data.title.to_ascii_lowercase();
+        let text = &submission.data.selftext.to_ascii_lowercase();
         let url =  submission.data.url.as_ref().unwrap();
 
-        //Iterate over all fiters and look for match
+        //Iterate over all filters and look for match
         for filter in &self.filters{
             //Look for title match
             if (title.contains(filter) || text.contains(filter)){
                 info!("Filter match found, sending message now.");
-                let msg = format!("__Filter Match: {filter}__\n[Deal here]({})", url);
+                let msg = format!("__Filter Match in {}: \
+                    {filter}__\n[Deal here]({})",submission.data.subreddit, url
+                );
                 Telegram::send(msg).await;
                 return
             }
@@ -67,11 +84,14 @@ impl Reddit {
     }
 }
 
-fn submission_check(submission: &BasicThing<SubmissionData>, time: f64) -> bool {
+fn submission_check(submission: &BasicThing<SubmissionData>, time: f64, source: &SingleSource) -> bool {
+    ///
+    /// Checks if a submission is within the current time scope and contains the correct flair per subreddit
+    ///
     let time_check = submission.data.created_utc > time-BUFFER_SECONDS;
     let flair_check = {
         if let Some(flair) = &submission.data.link_flair_text {
-            flair.eq("SELLING") //todo have this check the filterFile, hardcoded right now to hardwareswap
+            source.accepted_flair.iter().any(|f|f.eq(flair))
         } else {
             false
         }
@@ -80,6 +100,9 @@ fn submission_check(submission: &BasicThing<SubmissionData>, time: f64) -> bool 
 }
 
 async fn get_client() -> Client {
+    ///
+    /// Returns an authenticated reddit client
+    ///
     let user_agent = env::var("REDDIT_USER_AGENT").expect("REDDIT_USER_AGENT Missing");
     let client_id = env::var("REDDIT_CLIENT_ID").expect("REDDIT_CLIENT_ID Missing");
     let client_secret = env::var("REDDIT_CLIENT_SECRET").expect("REDDIT_CLIENT_SECRET Missing");
@@ -91,7 +114,6 @@ async fn get_client() -> Client {
         .password(password.as_str())
         .login()
         .await;
-
     let me = match client {
         Ok(me) => {
             me
@@ -100,6 +122,5 @@ async fn get_client() -> Client {
             panic!("Failed to log into reddit: {err}")
         }
     };
-
     me.client
 }

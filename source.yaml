@@ -8,7 +8,7 @@ sources:
     have_regex: \[USA-\w{2}\]\[H\](.*)
     want_regex: \[W\](.*)
   - id: "homelabsales"
-    enabled: False
+    enabled: True
     url: "https://www.reddit.com/r/homelabsales/"
     accepted_flair:
       - "US-W"
