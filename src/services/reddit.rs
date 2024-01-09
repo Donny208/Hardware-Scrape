@@ -19,7 +19,6 @@ pub struct Reddit {
 impl Reddit {
     pub async fn new(filters: Vec<String>, sources: Vec<SingleSource>) -> Reddit {
         let refresh = env::var("REFRESH_RATE").expect("REFRESH_RATE Missing").parse::<u64>().unwrap();
-        println!("My frefresh rate {refresh}");
         Reddit {
             sources,
             filters,
