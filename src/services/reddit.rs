@@ -13,7 +13,7 @@ const BUFFER_SECONDS: f64 = 2.5;
 pub struct Reddit {
     sources: Vec<SingleSource>,
     filters: Vec<String>,
-    refresh_rate: u32
+    refresh_rate: u64
 }
 
 impl Reddit {
