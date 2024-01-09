@@ -1,6 +1,9 @@
 # Use the official Rust image as a base
 FROM rust:slim-bullseye
 
+# Get Args
+ARG REFRESH_RATE
+
 RUN apt-get update && apt-get -y install \
     cron libssl-dev pkg-config
 
@@ -13,7 +16,7 @@ WORKDIR /app/src
 RUN cargo build --release
 
 # Add your cron job
-RUN echo "*/3 * * * * root cd /app && ./target/release/HardwareScrape > /proc/1/fd/1 2>/proc/1/fd/2" >> /etc/crontab
+RUN echo "*/${REFRESH_RATE} * * * * root cd /app && ./target/release/HardwareScrape > /proc/1/fd/1 2>/proc/1/fd/2" >> /etc/crontab
 
 # Start the cron daemon
 CMD cron -f

@@ -2,7 +2,10 @@ version: "3"
 services:
   worker:
     container_name: hs
-    build: .
+    build:
+      context: .
+      args:
+        REFRESH_RATE: ${REFRESH_RATE}
     env_file:
       - .env
     volumes:

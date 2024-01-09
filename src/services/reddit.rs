@@ -8,19 +8,24 @@ use roux::Subreddit;
 use crate::services::yaml_support::source_file::SingleSource as SingleSource;
 use crate::services::telegram::Telegram;
 const BUFFER_SECONDS: f64 = 2.5;
-const MINUTE_OFFSET: u64 = 60 * 3;
 
 //todo revist this when you have learned about lifetimes and maybe swap String for &'str
 pub struct Reddit {
     sources: Vec<SingleSource>,
-    filters: Vec<String>
+    filters: Vec<String>,
+    refresh_rate: u32
 }
 
 impl Reddit {
     pub async fn new(filters: Vec<String>, sources: Vec<SingleSource>) -> Reddit {
+        let refresh = env::var("REFRESH_RATE").expect("REFRESH_RATE Missing")
+            .parse()
+            .unwrap();
+        println!("My frefresh rate {refresh}");
         Reddit {
             sources,
-            filters
+            filters,
+            refresh_rate: refresh * 60 //Convert to minutes
         }
     }
 
@@ -29,9 +34,9 @@ impl Reddit {
         /// Iterate over all subreddits in source.yaml and get the most recent n posts and check for filter matches
         /// on valid submissions.
         ///
-        info!("Checking posts within the last {} minute(s)", MINUTE_OFFSET/60);
+        info!("Checking posts within the last {} minute(s)", self.refresh_rate/60);
         let time_check = match SystemTime::now().duration_since(UNIX_EPOCH) {
-            Ok(n) => (n.as_secs()-(MINUTE_OFFSET)) as f64, //set to 1 minute before
+            Ok(n) => (n.as_secs()-(self.refresh_rate)) as f64, //set to 1 minute before
             Err(_) => panic!("SystemTime before UNIX EPOCH!"),
         };
         let client = get_client().await;

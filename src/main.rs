@@ -4,7 +4,6 @@ use services::yaml_support::source_file::SourceFile;
 use services::reddit::Reddit;
 use dotenv::dotenv;
 use std::fs;
-use log::info;
 
 #[tokio::main]
 async fn main() {
