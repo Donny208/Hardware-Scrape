@@ -1,4 +1,4 @@
-# Still needs to be integrated
+# Still needs to be integrated fully
 sources:
   - id: "hardwareswap"
     enabled: True
