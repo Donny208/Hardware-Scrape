@@ -14,5 +14,6 @@ pub struct SingleSource {
     pub accepted_flair: Vec<String>,
     pub have_regex: String,
     pub want_regex: String,
-    pub grab_amount: u32
+    pub grab_amount: u32,
+    pub save_to_db: bool
 }

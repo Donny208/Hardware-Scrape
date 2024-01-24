@@ -8,6 +8,7 @@ sources:
     have_regex: \[USA-\w{2}\]\[H\](.*)
     want_regex: \[W\](.*)
     grab_amount: 6
+    save_to_db: True
   - id: "homelabsales"
     enabled: True
     url: "https://www.reddit.com/r/homelabsales/"
@@ -18,3 +19,4 @@ sources:
     have_regex: \[FS\]\[USA-\w{2}\]
     want_regex: ""
     grab_amount: 3
+    save_to_db: False

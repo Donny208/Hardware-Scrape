@@ -46,11 +46,13 @@ impl Reddit {
                 let latest = subreddit.latest(source.grab_amount, None).await; //adjust the number based on range
                 match latest {
                     Ok(submissions) => {
-                        //First we add all submissions into the db
-                        for s in &submissions.data.children {
-                            db.add_document_from_submission(&s.data).await;
-                        }
 
+                        if (source.save_to_db) {
+                            //First we add all submissions into the db if setting enabled
+                            for s in &submissions.data.children {
+                                db.add_document_from_submission(&s.data).await;
+                            }
+                        }
                         //Next we filter out any submissions that are older than now minus x minute(s)
                         let valid_submissions: Vec<_> = submissions.data.children.into_iter()
                             .filter(|s| submission_check(s, time_check, &source))
