@@ -1,5 +1,6 @@
 use mongodb::{ bson::doc, options::{ ClientOptions, ServerApi, ServerApiVersion }, Client };
-use mongodb::bson::DateTime;
+use log::info;
+use roux::submission::SubmissionData;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
@@ -43,17 +44,40 @@ impl MongoWrapper {
     }
 
     pub async fn add_document(&self,
-                        author: String,
-                        title: String,
-                        body: String,
-                        submitted_utc: DateTime) -> Result<bool, mongodb::error::Error>{
+                              title: String,
+                              body: String,
+                              author: String,
+                              subreddit: String,
+                              post_id: String,
+                              link: String,
+                              created_utc: f64
+    ) -> Result<bool, mongodb::error::Error>{
         let deal_col = self.client.database("hardware_scrape").collection("deals");
         let retval = deal_col.insert_one(
             Deal {
-                author,
                 title,
                 body,
-                submitted_utc
+                author,
+                subreddit,
+                post_id,
+                link,
+                created_utc
+            }, None).await?;
+        println!("Inserted document with _id: {}", retval.inserted_id);
+        Ok(true)
+    }
+
+    pub async fn add_document_from_submission(&self, submission_data: &SubmissionData) -> Result<bool, mongodb::error::Error>{
+        let deal_col = self.client.database("hardware_scrape").collection("deals");
+        let retval = deal_col.insert_one(
+            Deal {
+                title: submission_data.title.to_ascii_lowercase(),
+                body: submission_data.selftext.to_ascii_lowercase(),
+                author: submission_data.author.to_ascii_lowercase(),
+                subreddit: submission_data.subreddit.to_ascii_lowercase(),
+                post_id: submission_data.id.clone(),
+                link: submission_data.url.clone().unwrap(),
+                created_utc: submission_data.created_utc.clone()
             }, None).await?;
         println!("Inserted document with _id: {}", retval.inserted_id);
         Ok(true)
@@ -62,8 +86,11 @@ impl MongoWrapper {
 
 #[derive(Serialize, Deserialize)]
 struct Deal {
-    author: String,
     title: String,
     body: String,
-    submitted_utc: DateTime
+    author: String,
+    subreddit: String,
+    post_id: String,
+    link: String,
+    created_utc: f64
 }

@@ -11,10 +11,8 @@ use crate::services::db::MongoWrapper;
 async fn main() -> Result<(), Box<dyn std::error::Error>>{
     load_helpers();
 
-    let config = HSConfig::new(false);
-    let reddit = Reddit::new(config.filter_file.keywords, config.source_file.sources);
 
-    //reddit.await.check_posts().await; todo add back
+    let config = HSConfig::new(false);
 
     let mongo = MongoWrapper::new(
         config.mongo_username,
@@ -23,7 +21,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>>{
         config.mongo_database
     ).await?;
 
-    mongo.add_document("test".to_string(), "test".to_string(), "test".to_string(), DateTime::now()).await;
+    let reddit = Reddit::new(config.filter_file.keywords, config.source_file.sources);
+
+    reddit.await.check_posts(&mongo).await;
 
     Ok(())
 }
