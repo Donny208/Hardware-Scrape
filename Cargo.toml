@@ -14,3 +14,4 @@ serde = { version = "1.0.194", features = ["derive"] }
 tokio = { version = "1.0.0", features = ["rt", "rt-multi-thread", "macros"] }
 serde_yaml = "0.9.30"
 roux = "2.2.9"
+mongodb = "2.8.0"

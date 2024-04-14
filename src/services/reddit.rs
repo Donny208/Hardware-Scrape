@@ -5,6 +5,8 @@ use reqwest::Client;
 use roux::response::BasicThing;
 use roux::submission::SubmissionData;
 use roux::Subreddit;
+use roux::util::FeedOption;
+use crate::services::db::MongoWrapper;
 use crate::services::yaml_support::source_file::SingleSource as SingleSource;
 use crate::services::telegram::Telegram;
 const BUFFER_SECONDS: f64 = 2.5;
@@ -13,7 +15,7 @@ const BUFFER_SECONDS: f64 = 2.5;
 pub struct Reddit {
     sources: Vec<SingleSource>,
     filters: Vec<String>,
-    refresh_rate: u64
+    refresh_rate: u64,
 }
 
 impl Reddit {
@@ -22,11 +24,11 @@ impl Reddit {
         Reddit {
             sources,
             filters,
-            refresh_rate: refresh * 60 //Convert to minutes
+            refresh_rate: refresh * 60, //Convert to minutes
         }
     }
 
-    pub async fn check_posts(&self) {
+    pub async fn check_posts(&self, db: &MongoWrapper) {
         ///
         /// Iterate over all subreddits in source.yaml and get the most recent n posts and check for filter matches
         /// on valid submissions.
@@ -39,23 +41,30 @@ impl Reddit {
         let client = get_client().await;
         for source in &self.sources {
             if source.enabled {
-                info!("-> Checking {}", source.id);
-                let subreddit = Subreddit::new_oauth(source.id.as_ref(), &client); //todo make this not hardcoded and use sources.yaml
-                let latest = subreddit.latest(15, None).await; //adjust the 10 as seen
+                info!("-> Checking {}({} posts)", source.id, source.grab_amount);
+                let subreddit = Subreddit::new_oauth(source.id.as_ref(), &client);
+                let latest = subreddit.latest(source.grab_amount, None).await; //adjust the number based on range
                 match latest {
                     Ok(submissions) => {
-                        // First we filter out any submissions that are older than now minus 1 minute
+
+                        if (source.save_to_db) {
+                            //First we add all submissions into the db if setting enabled
+                            for s in &submissions.data.children {
+                                db.add_document_from_submission(&s.data).await;
+                            }
+                        }
+                        //Next we filter out any submissions that are older than now minus x minute(s)
                         let valid_submissions: Vec<_> = submissions.data.children.into_iter()
                             .filter(|s| submission_check(s, time_check, &source))
                             .collect();
 
-                        //Iterate over all valid submissions and look for values from self.filters
+                        //Then Iterate over all valid submissions and look for values from self.filters
                         for s in valid_submissions{
                             self.filter_check(&s).await;
                         }
                     }
                     Err(err) => {
-                        println!("Failed to get submissions{}", err);
+                        println!("Failed to get submissions: {}", err);
                     }
                 }
             }
@@ -86,10 +95,17 @@ impl Reddit {
     }
 }
 
-fn submission_check(submission: &BasicThing<SubmissionData>, time: f64, source: &SingleSource) -> bool {
+fn submission_check(submission: &BasicThing<SubmissionData>,
+                    time: f64,
+                    source: &SingleSource) -> bool {
     ///
     /// Checks if a submission is within the current time scope and contains the correct flair per subreddit
     ///
+
+    //First we add it to the DB
+
+
+    //Next we actually perform the check
     let time_check = submission.data.created_utc > time-BUFFER_SECONDS;
     let flair_check = {
         if let Some(flair) = &submission.data.link_flair_text {
