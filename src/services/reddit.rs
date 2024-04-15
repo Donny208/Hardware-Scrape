@@ -6,7 +6,8 @@ use roux::response::BasicThing;
 use roux::submission::SubmissionData;
 use roux::Subreddit;
 use roux::util::FeedOption;
-use crate::services::db::MongoWrapper;
+use serde::de::Error;
+use crate::services::db_wrapper::DatabaseHandler;
 use crate::services::yaml_support::source_file::SingleSource as SingleSource;
 use crate::services::telegram::Telegram;
 const BUFFER_SECONDS: f64 = 2.5;
@@ -28,7 +29,7 @@ impl Reddit {
         }
     }
 
-    pub async fn check_posts(&self, db: &MongoWrapper) {
+    pub async fn check_posts(&self, db: &DatabaseHandler) {
         ///
         /// Iterate over all subreddits in source.yaml and get the most recent n posts and check for filter matches
         /// on valid submissions.
@@ -46,11 +47,12 @@ impl Reddit {
                 let latest = subreddit.latest(source.grab_amount, None).await; //adjust the number based on range
                 match latest {
                     Ok(submissions) => {
-
                         if (source.save_to_db) {
                             //First we add all submissions into the db if setting enabled
                             for s in &submissions.data.children {
-                                db.add_document_from_submission(&s.data).await;
+                                if let Err(e) = db.add_document_from_submission(&s.data).await {
+                                    println!("Failed to insert into db {e}")
+                                }
                             }
                         }
                         //Next we filter out any submissions that are older than now minus x minute(s)
