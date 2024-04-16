@@ -112,8 +112,35 @@ impl DatabaseHandler {
         }
     }
 
+    pub async fn does_post_exist(&self, post_id: &String) -> Result<bool, sqlx::Error> {
+        if let Some(pool) = &self.pool {
+            // Checking only for the existence of the post_id in the posts table
+            let result = sqlx::query("SELECT EXISTS (SELECT 1 FROM raw_posts WHERE external_reddit_id = $1)")
+                .bind(post_id)
+                .fetch_one(pool)
+                .await?;
+
+            // Extract the boolean directly from the result row
+            let exists = result.try_get::<bool, _>(0)?;
+            Ok(exists)
+        } else {
+            // Handle the case where there is no pool initialized
+            Err(sqlx::Error::PoolClosed)
+        }
+    }
+
     pub async fn add_document_from_submission(&self, submission_data: &SubmissionData) -> Result<(), Box<dyn Error>> {
-        // First we validate the title
+        // First make sure the post doesn't already exist
+        match self.does_post_exist(&submission_data.id).await {
+            Ok(post_exists) => {
+                if post_exists {
+                    return Err(Box::new(io::Error::new(ErrorKind::InvalidInput, "This post already exists in the db")))
+                }
+            },
+            Err(e) => return Err(Box::try_from(e).unwrap()),
+        };
+
+        // Then we validate the title
         let title_components = match post_validation(&submission_data.title) {
             Ok(components) => components,
             Err(e) => return Err(e),
