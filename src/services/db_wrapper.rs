@@ -237,8 +237,8 @@ fn post_validation(post_title: &str) -> Result<ValidTitleComponents, Box<dyn Err
     match re.captures(post_title) {
         Some(captures) => {
             Ok(ValidTitleComponents {
-                country: captures.name("country").unwrap().as_str().to_string(),
-                state: captures.name("state").unwrap().as_str().to_string(),
+                country: captures.name("country").unwrap().as_str().to_uppercase(),
+                state: captures.name("state").unwrap().as_str().to_uppercase(),
                 have_text: captures.name("have_text").unwrap().as_str().to_string(),
                 want_text: captures.name("want_text").unwrap().as_str().to_string(),
             })
