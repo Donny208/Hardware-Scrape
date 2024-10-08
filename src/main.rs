@@ -4,8 +4,7 @@ use services::yaml_support::source_file::SourceFile;
 use services::reddit::Reddit;
 use dotenv::dotenv;
 use std::{env, fs};
-use mongodb::bson::DateTime;
-use crate::services::db::MongoWrapper;
+use crate::services::db_wrapper::DatabaseHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>>{
@@ -14,16 +13,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>>{
 
     let config = HSConfig::new(false);
 
-    let mongo = MongoWrapper::new(
-        config.mongo_username,
-        config.mongo_password,
-        config.mongo_host,
-        config.mongo_database
-    ).await?;
+    let mut db = DatabaseHandler::new(
+        config.db_username,
+        config.db_password,
+        config.db_host,
+        config.db_database
+    );
+    
+    db.init_pool().await.expect("Failed to init db");
+
 
     let reddit = Reddit::new(config.filter_file.keywords, config.source_file.sources);
 
-    reddit.await.check_posts(&mongo).await;
+    reddit.await.check_posts(&db).await;
 
     Ok(())
 }
@@ -37,10 +39,10 @@ fn load_helpers() {
 struct HSConfig {
     filter_file: FilterFile,
     source_file: SourceFile,
-    mongo_username: String,
-    mongo_password: String,
-    mongo_host: String,
-    mongo_database: String
+    db_username: String,
+    db_password: String,
+    db_host: String,
+    db_database: String
 }
 
 impl HSConfig {
@@ -64,10 +66,10 @@ impl HSConfig {
         return HSConfig {
             filter_file,
             source_file,
-            mongo_username: env::var("MONGODB_USERNAME").expect("MONGODB_USERNAME Missing"),
-            mongo_password: env::var("MONGODB_PASSWORD").expect("MONGODB_PASSWORD Missing"),
-            mongo_host: env::var("MONGODB_HOST").expect("MONGODB_HOST Missing"),
-            mongo_database: env::var("MONGODB_DATABASE").expect("MONGODB_DATABASE Missing")
+            db_username: env::var("POSTGRES_USERNAME").expect("DB_USERNAME Missing"),
+            db_password: env::var("POSTGRES_PASSWORD").expect("DB_PASSWORD Missing"),
+            db_host: env::var("POSTGRES_HOST").expect("DB_HOST Missing"),
+            db_database: env::var("POSTGRES_DATABASE").expect("DB_DATABASE Missing")
         }
     }
 }
