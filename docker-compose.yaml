@@ -12,14 +12,16 @@ services:
       - ./filter.yaml:/app/filter.yaml
       - ./source.yaml:/app/source.yaml
     depends_on:
-      - postgres
+      - db
   postgres:
+    container_name: db
     image: postgres:latest
     ports:
       - 5432:5432
     volumes:
-      - ~/apps/postgres:/var/lib/postgresql/data
+      - /var/lib/postgresql:/var/lib/postgresql/data
     environment:
-      - POSTGRES_PASSWORD=example_password
-      - POSTGRES_USER=example
-      - POSTGRES_DB=example
+      - POSTGRES_PASSWORD=donny_password
+      - POSTGRES_USER=donny
+      - POSTGRES_DB=postgres
+    restart: unless-stopped

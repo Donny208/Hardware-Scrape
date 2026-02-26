@@ -20,3 +20,15 @@ sources:
     want_regex: ""
     grab_amount: 3
     save_to_db: False
+  - id: "buildapcsales"
+    enabled: True
+    url: "https://www.reddit.com/r/buildapcsales/"
+    accepted_flair:
+      - "CPU"
+      - "HDD"
+      - "SSD"
+      - "PSU"
+    have_regex: \[FS\]\[USA-\w{2}\]
+    want_regex: ""
+    grab_amount: 3
+    save_to_db: False
