@@ -18,7 +18,7 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - /var/lib/postgresql:/var/lib/postgresql/data
+      - ~/containers/hardware_scrape/data:/var/lib/postgresql
     environment:
       - POSTGRES_PASSWORD=donny_password
       - POSTGRES_USER=donny
